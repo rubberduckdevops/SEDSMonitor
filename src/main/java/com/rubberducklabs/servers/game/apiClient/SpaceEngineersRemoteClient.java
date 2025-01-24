@@ -16,12 +16,15 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SpaceEngineersRemoteClient {
     private final String baseUrl;
     private final String securityKey;
     private final Random random;
     private final HttpClient httpClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public SpaceEngineersRemoteClient(String baseUrl, String securityKey) {
         this.baseUrl = baseUrl;
@@ -94,16 +97,24 @@ public class SpaceEngineersRemoteClient {
     }
 
     // Example usage method
-    public void getServerStatus() throws Exception {
+    public void getCurrentPlayers() throws Exception {
         HttpRequest request = createRequest("v1/session/players", "GET", Map.of());
         var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         System.out.println("Response Code: " + response.statusCode());
         System.out.println("Response Body: " + response.body());
+        JsonNode responseData = objectMapper.readTree(response.body()).get("data");
+        JsonNode players = responseData.get("players");
+        if (players != null) {
+            System.out.println("Players: " + players.toString());
+        }
     }
-    public void pingServer() throws Exception {
+    public boolean pingServer() throws Exception {
         HttpRequest request = createRequest("v1/server/ping", "GET", Map.of());
         var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         System.out.println("Response Code: " + response.statusCode());
         System.out.println("Response Body: " + response.body());
+        JsonNode responseData = objectMapper.readTree(response.body()).get("data");
+        System.out.println(responseData.get("Result"));
+        return response.statusCode() == 200;
     }
 }
